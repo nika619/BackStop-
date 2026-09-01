@@ -1,0 +1,24 @@
+=========================================================================================
+                          BACKSTOP EVALUATION REPORT — TRACK 03                          
+                      Seeded Synthetic Benchmark (N=1,000, Seed=20260901)                 
+=========================================================================================
+
+| Metric                             | Do nothing (Control) | Retry-all ×3 (Naive) | Backstop (Agent)     |
+|------------------------------------|----------------------|----------------------|----------------------|
+| Total Cases (80/20 Arm Split)      | 1000                 | 1000                 | 1000                 |
+| Gross Recovered (₹)                | ₹    1,172,870.00 | ₹    1,295,854.00 | ₹    1,938,767.00 |
+| Incremental vs Control (₹)         | ₹            0.00 | ₹      122,984.00 | ₹    1,133,609.11 |
+| Lift over Control (95% CI)         | —                    |   +1.7 pp             | +19.1% [+13.5%, +24.8%] |
+| Recovery Rate (Overall)            |               15.8% |               17.5% |               27.6% |
+| Customer Contacts Sent             | 0                    | 2000                 | 235                  |
+| Contacts per ₹1,000 Recovered      |                0.00  |                1.54  |                0.12  |
+| Policy Violations                  | 0                    | 690                  | 0                    |
+| Hard-stop Cases Auto-actioned      | 0                    | 42                   | 0                    |
+| Median Time to Recovery (Hours)    |               52.4h |               28.1h |               20.9h |
+-----------------------------------------------------------------------------------------
+
+KEY STATISTICAL FINDINGS:
+1. Incremental Recovery: Backstop recovered ₹1,133,609.11 in incremental revenue over the organic control.
+2. Statistical Significance: Lift of 19.13% (95% CI: [13.5%, 24.76%], p-value = 1.10e-07).
+3. Contact Efficiency: Backstop sent 235 contacts vs 2000 from Retry-All (a 88.2% reduction in customer spam).
+4. Compliance Cage Integrity: Exactly 0 policy violations and 0 hard-stop auto-actions across the entire batch.
