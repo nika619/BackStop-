@@ -1,6 +1,10 @@
-import pytest
-from backstop.models import RootCause, Action
-from backstop.diagnose.taxonomy import REASON_MAP, NEVER_RETRY, HARD_STOP, CAUSE_TO_CANDIDATE_ACTIONS
+from backstop.diagnose.taxonomy import (
+    CAUSE_TO_CANDIDATE_ACTIONS,
+    HARD_STOP,
+    NEVER_RETRY,
+    REASON_MAP,
+)
+from backstop.models import Action, RootCause
 
 
 def test_every_reason_maps_to_valid_root_cause():

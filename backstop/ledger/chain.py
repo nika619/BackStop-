@@ -1,7 +1,9 @@
 import hashlib
 import json
 from datetime import datetime, timezone
+
 from sqlmodel import Session, select
+
 from backstop.models import LedgerEntry
 
 GENESIS = "0" * 64
@@ -15,7 +17,7 @@ def canonical_json(payload: dict) -> str:
 def digest(prev_hash: str, payload: dict) -> str:
     """Compute SHA-256 over prev_hash + canonical serialized payload."""
     canonical = canonical_json(payload)
-    return hashlib.sha256(f"{prev_hash}|{canonical}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{prev_hash}|{canonical}".encode()).hexdigest()
 
 
 def append(
@@ -108,7 +110,7 @@ if __name__ == "__main__":
     Proves: append → verify (clean) → tamper → verify (detects exact bad seq).
     Run with: python -m backstop.ledger.chain
     """
-    from sqlmodel import create_engine, SQLModel
+    from sqlmodel import SQLModel, create_engine
 
     engine = create_engine("sqlite:///:memory:", echo=False)
     SQLModel.metadata.create_all(engine)

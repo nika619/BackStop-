@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Any
+
 from backstop.models import Action, Case, PaymentEvent
 
 

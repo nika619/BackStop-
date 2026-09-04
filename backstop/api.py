@@ -1,37 +1,33 @@
-import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Any
-from fastapi import FastAPI, Depends, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select
-from pydantic import BaseModel
 
-from backstop.database import init_db, get_session, engine
-from backstop.models import PaymentEvent, Case, LedgerEntry, Action, RootCause
-from backstop.diagnose.classifier import classify
-from backstop.diagnose.taxonomy import CAUSE_TO_CANDIDATE_ACTIONS, NEVER_RETRY, HARD_STOP
-from backstop.policy.engine import (
-    evaluate,
-    PolicyContext,
-    POLICY_VERSION,
-    MAX_ATTEMPTS,
-    MAX_CONTACTS_PER_DAY,
-    QUIET_START,
-    QUIET_END,
-    AFA_DEFAULT_PAISE,
-    AFA_ELEVATED_PAISE,
-    PREDEBIT_NOTICE_HOURS,
+from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from sqlmodel import Session, select
+
+from backstop.database import get_session, init_db
+from backstop.diagnose.taxonomy import (
+    CAUSE_TO_CANDIDATE_ACTIONS,
+    HARD_STOP,
+    NEVER_RETRY,
 )
-from backstop.policy.calendar import to_ist
-from backstop.planner.redact import redact
-from backstop.planner.planner import plan, PROMPT_VERSION
-from backstop.execute.executor import execute
-from backstop.ledger.chain import append as append_ledger, verify_chain, tamper_entry
 from backstop.eval.generator import generate
-from backstop.eval.report import run_full_benchmark, generate_report_text
-from backstop.ingest.webhook import router as webhook_router
+from backstop.eval.report import run_full_benchmark
+from backstop.execute.executor import execute
 from backstop.ingest.batch import import_batch_records
+from backstop.ingest.webhook import router as webhook_router
+from backstop.ledger.chain import append as append_ledger
+from backstop.ledger.chain import tamper_entry, verify_chain
+from backstop.models import Action, Case, LedgerEntry, PaymentEvent, RootCause
+from backstop.planner.planner import PROMPT_VERSION, plan
+from backstop.planner.redact import redact
+from backstop.policy.calendar import to_ist
+from backstop.policy.engine import (
+    POLICY_VERSION,
+    PolicyContext,
+    evaluate,
+)
 
 # Global Kill Switch State (In-memory + Ledger logged)
 GLOBAL_KILL_SWITCH = {"enabled": True}

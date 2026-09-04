@@ -1,9 +1,8 @@
-import pytest
-from datetime import datetime, timezone, timedelta
-from freezegun import freeze_time
-from backstop.models import RootCause, Action, Case, PaymentEvent
-from backstop.policy.engine import evaluate, PolicyContext, POLICY_VERSION
+from datetime import datetime, timezone
+
+from backstop.models import Action, Case, PaymentEvent, RootCause
 from backstop.policy.calendar import IST
+from backstop.policy.engine import PolicyContext, evaluate
 
 
 def create_event(

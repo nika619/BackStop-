@@ -1,7 +1,8 @@
-import os
 import logging
-from backstop.models import RootCause, PaymentEvent
+import os
+
 from backstop.diagnose.taxonomy import REASON_MAP
+from backstop.models import PaymentEvent, RootCause
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def llm_classify_free_text(description: str | None) -> tuple[RootCause, float, l
         return RootCause.UNKNOWN, 0.4, ["gemini_llm: unmapped response"]
     except Exception as e:
         logger.warning(f"Gemini classification fallback error: {e}")
-        return RootCause.UNKNOWN, 0.2, [f"gemini_llm_error: {str(e)}"]
+        return RootCause.UNKNOWN, 0.2, [f"gemini_llm_error: {e!s}"]
 
 
 def classify(event: PaymentEvent) -> tuple[RootCause, float, list[str]]:

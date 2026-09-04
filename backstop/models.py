@@ -1,7 +1,8 @@
+import uuid
 from datetime import datetime, timezone
 from enum import Enum
-import uuid
-from sqlmodel import SQLModel, Field, Column, JSON
+
+from sqlmodel import JSON, Column, Field, SQLModel
 
 
 class RootCause(str, Enum):

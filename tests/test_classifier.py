@@ -1,7 +1,7 @@
-import pytest
 from datetime import datetime, timezone
-from backstop.models import PaymentEvent, RootCause
+
 from backstop.diagnose.classifier import classify
+from backstop.models import PaymentEvent, RootCause
 
 
 def test_classifier_exact_matches_standard_reasons():

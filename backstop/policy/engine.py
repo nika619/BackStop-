@@ -1,9 +1,14 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Any
-from backstop.models import RootCause, Action, Case, PaymentEvent
-from backstop.diagnose.taxonomy import CAUSE_TO_CANDIDATE_ACTIONS, NEVER_RETRY, HARD_STOP
-from backstop.policy.calendar import to_ist, is_within_trai_window, IST
+
+from backstop.diagnose.taxonomy import (
+    CAUSE_TO_CANDIDATE_ACTIONS,
+    HARD_STOP,
+    NEVER_RETRY,
+)
+from backstop.models import Action, Case, PaymentEvent, RootCause
+from backstop.policy.calendar import to_ist
 
 POLICY_VERSION = "2026.09.01"
 

@@ -1,14 +1,15 @@
 import hashlib
-import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
+
 from sqlmodel import Session
-from backstop.models import Action, Case, PaymentEvent, LedgerEntry
-from backstop.policy.engine import evaluate, PolicyContext, POLICY_VERSION
+
 from backstop.execute.registry import TOOL_REGISTRY
 from backstop.ledger.chain import append as append_ledger
+from backstop.models import Action, Case, PaymentEvent
+from backstop.policy.engine import POLICY_VERSION, PolicyContext, evaluate
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def execute(
     """
     params = params or {}
     idempotency_key = hashlib.sha256(
-        f"{event.payment_id}|{action.value}|{case.attempt_no}".encode("utf-8")
+        f"{event.payment_id}|{action.value}|{case.attempt_no}".encode()
     ).hexdigest()
 
     # --- WALL 1: Global Kill Switch ---

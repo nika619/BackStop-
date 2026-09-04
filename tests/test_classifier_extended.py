@@ -2,10 +2,10 @@
 Tests for backstop.diagnose.classifier — covering exact-map, source heuristics,
 and free-text heuristic fallback branches (no live Gemini call needed).
 """
-import pytest
 from datetime import datetime, timezone
-from backstop.models import PaymentEvent, RootCause
+
 from backstop.diagnose.classifier import classify, llm_classify_free_text
+from backstop.models import PaymentEvent, RootCause
 
 
 def make_event(error_reason=None, error_source=None, error_description=None):

@@ -1,11 +1,10 @@
 """
 Tests for backstop.planner.redact — DPDP Act 2023 PII stripping and data minimisation.
 """
-import pytest
 from datetime import datetime, timezone
-from backstop.models import Case, PaymentEvent, RootCause, Action
-from backstop.planner.redact import redact, get_amount_band, hours_since
 
+from backstop.models import Action, Case, PaymentEvent, RootCause
+from backstop.planner.redact import get_amount_band, hours_since, redact
 
 # --- get_amount_band ---
 

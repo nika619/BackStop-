@@ -1,10 +1,12 @@
-import random
 import hashlib
+import random
 from dataclasses import dataclass, field
-from datetime import datetime
-from backstop.models import RootCause, Action, PaymentEvent, Case
-from backstop.diagnose.taxonomy import REASON_MAP, NEVER_RETRY, HARD_STOP, CAUSE_TO_CANDIDATE_ACTIONS
+
+from backstop.diagnose.taxonomy import (
+    CAUSE_TO_CANDIDATE_ACTIONS,
+)
 from backstop.eval.generator import BASE_RECOVERY, UPLIFT
+from backstop.models import Action, RootCause
 
 
 @dataclass

@@ -1,18 +1,18 @@
-import os
 import math
+from datetime import datetime
 from pathlib import Path
-from datetime import datetime, timezone
+
 from scipy import stats
-from sqlmodel import Session, create_engine, SQLModel
-from backstop.models import RootCause, Action, PaymentEvent, Case
-from backstop.diagnose.taxonomy import REASON_MAP
+from sqlmodel import Session, SQLModel, create_engine
+
 from backstop.diagnose.classifier import classify
-from backstop.policy.engine import evaluate, PolicyContext, POLICY_VERSION
-from backstop.planner.planner import plan
-from backstop.execute.executor import execute
+from backstop.eval.baselines import run_do_nothing, run_retry_all_3x
 from backstop.eval.generator import generate
 from backstop.eval.simulator import SimulationMetrics, simulate_case_outcome
-from backstop.eval.baselines import run_do_nothing, run_retry_all_3x
+from backstop.execute.executor import execute
+from backstop.models import Action, Case, PaymentEvent, RootCause
+from backstop.planner.planner import plan
+from backstop.policy.engine import PolicyContext, evaluate
 
 
 def compute_incremental_lift(treatment_recovered: int, treatment_total: int, control_recovered: int, control_total: int) -> dict:
@@ -223,4 +223,4 @@ if __name__ == "__main__":
     evidence_dir.mkdir(parents=True, exist_ok=True)
     with open(evidence_dir / "eval_run.txt", "w", encoding="utf-8") as f:
         f.write(report_text)
-    print(f"\nWrote evidence artifact to docs/evidence/eval_run.txt")
+    print("\nWrote evidence artifact to docs/evidence/eval_run.txt")

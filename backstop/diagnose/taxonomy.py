@@ -1,4 +1,4 @@
-from backstop.models import RootCause, Action
+from backstop.models import Action, RootCause
 
 REASON_MAP: dict[str, RootCause] = {
     # TRANSIENT_INFRA — retry works, cheapest wins in the system

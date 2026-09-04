@@ -1,7 +1,7 @@
 import pytest
-from sqlmodel import Session, create_engine, SQLModel
-from backstop.models import LedgerEntry
-from backstop.ledger.chain import append, verify_chain, tamper_entry, GENESIS
+from sqlmodel import Session, SQLModel, create_engine
+
+from backstop.ledger.chain import GENESIS, append, tamper_entry, verify_chain
 
 
 @pytest.fixture

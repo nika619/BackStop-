@@ -1,16 +1,18 @@
-import os
-import hmac
 import hashlib
+import hmac
 import json
 import logging
+import os
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request, Header, HTTPException, Depends
-from sqlmodel import Session
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session
+
 from backstop.database import get_session
-from backstop.models import PaymentEvent, Case, RootCause
 from backstop.diagnose.classifier import classify
 from backstop.eval.generator import assign_arm
+from backstop.models import Case, PaymentEvent
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 logger = logging.getLogger(__name__)

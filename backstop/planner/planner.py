@@ -1,11 +1,12 @@
-import os
 import json
-import re
 import logging
+import os
+import re
 from typing import Any
+
 from backstop.models import Action, Case, PaymentEvent
+from backstop.planner.prompt import SYSTEM_PROMPT
 from backstop.planner.redact import redact
-from backstop.planner.prompt import SYSTEM_PROMPT, PROMPT_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +127,7 @@ def plan(case: Case, event: PaymentEvent, permitted: frozenset[Action]) -> tuple
                 safe_choice = safest(permitted)
                 return safe_choice, {
                     "action": safe_choice.value,
-                    "reason": f"Fallback to safest action after planner error: {str(e)}",
+                    "reason": f"Fallback to safest action after planner error: {e!s}",
                     "delay_hours": 0,
                     "message_tone": "neutral",
                     "fallback": True,

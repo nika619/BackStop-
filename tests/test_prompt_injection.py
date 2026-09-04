@@ -1,5 +1,7 @@
-import pytest
 from datetime import datetime, timezone
+
+import pytest
+
 from backstop.models import Action, Case, PaymentEvent, RootCause
 from backstop.planner.planner import plan
 

@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
-from backstop.models import Case, PaymentEvent, Action
+
+from backstop.models import Action, Case, PaymentEvent
 
 
 def get_amount_band(amount_paise: int) -> str:

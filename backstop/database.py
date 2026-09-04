@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-from sqlmodel import SQLModel, create_engine, Session
+
 from dotenv import load_dotenv
+from sqlmodel import Session, SQLModel, create_engine
 
 load_dotenv()
 

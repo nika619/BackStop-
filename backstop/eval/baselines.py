@@ -1,8 +1,6 @@
-from datetime import datetime, timezone
-from backstop.models import RootCause, Action, Case, PaymentEvent
-from backstop.diagnose.taxonomy import REASON_MAP, HARD_STOP, NEVER_RETRY
-from backstop.policy.engine import evaluate, PolicyContext
+from backstop.diagnose.taxonomy import HARD_STOP, NEVER_RETRY, REASON_MAP
 from backstop.eval.simulator import SimulationMetrics, simulate_case_outcome
+from backstop.models import Action, RootCause
 
 
 def run_do_nothing(cases: list[dict]) -> SimulationMetrics:
