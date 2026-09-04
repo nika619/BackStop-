@@ -3,8 +3,8 @@ import { ShieldCheck, Activity, Power, Lock, Cpu, Sparkles } from 'lucide-react'
 
 export default function Header({ activeTab, setActiveTab, killSwitchEngaged, onToggleKillSwitch }) {
   return (
-    <header className="sticky top-0 z-50 bg-[#07090E]/90 backdrop-blur-md border-b border-[#1F2839] px-6 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[#07090E]/90 backdrop-blur-md border-b border-[#1F2839] px-6 sm:px-8 py-3">
+      <div className="max-w-[1500px] w-full mx-auto flex items-center justify-between">
         
         {/* Brand & Logo */}
         <div className="flex items-center gap-4">

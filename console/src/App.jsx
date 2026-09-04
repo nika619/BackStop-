@@ -108,7 +108,7 @@ export default function App() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6 space-y-6">
+      <main className="flex-1 w-full max-w-[1500px] mx-auto px-6 sm:px-8 py-6 space-y-6">
         
         {/* Quick Seeder bar if cases are empty */}
         {cases.length === 0 && (

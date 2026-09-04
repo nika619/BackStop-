@@ -62,6 +62,27 @@ app.add_middleware(
 app.include_router(webhook_router)
 
 
+@app.get("/")
+def root_status():
+    return {
+        "service": "Backstop Revenue Recovery Engine",
+        "track": "03 — AI Revenue Recovery (Razorpay Buildathon 2026)",
+        "status": "online",
+        "policy_version": POLICY_VERSION,
+        "docs_url": "/docs",
+        "console_url": "http://localhost:5173",
+        "endpoints": {
+            "health": "/api/health",
+            "benchmark": "/api/benchmark",
+            "cases": "/api/cases",
+            "policies": "/api/policies",
+            "kill_switch": "/api/kill-switch",
+            "ledger_verify": "/api/ledger/verify",
+            "webhooks": "/webhooks/razorpay"
+        }
+    }
+
+
 @app.get("/api/health")
 def health_check():
     return {

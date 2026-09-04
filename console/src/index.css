@@ -1,12 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
 :root {
-  --bg-main: #07090E;
-  --bg-card: #0F131C;
-  --bg-card-hover: #151B27;
-  --bg-elevated: #1B2332;
-  --border-subtle: #1F2839;
-  --border-strong: #2E3B52;
+  --bg-main: #06080D;
+  --bg-card: #0D111A;
+  --bg-card-hover: #131926;
+  --bg-elevated: #182030;
+  --border-subtle: #1E2738;
+  --border-strong: #2D3A52;
   --text-primary: #F3F5F9;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
@@ -26,13 +27,20 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   background-color: var(--bg-main);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
-  overflow-x: hidden;
+  width: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .mono {
@@ -58,10 +66,10 @@ body {
 
 /* Glass & Card utility styles */
 .glass-panel {
-  background: rgba(15, 19, 28, 0.85);
-  backdrop-filter: blur(12px);
+  background: rgba(13, 17, 26, 0.85);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .glass-panel:hover {
@@ -69,37 +77,25 @@ body {
 }
 
 .glow-blue {
-  box-shadow: 0 0 24px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.12);
 }
 
 .glow-green {
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.12);
 }
 
 .glow-amber {
-  box-shadow: 0 0 24px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.12);
 }
 
 .glow-rose {
-  box-shadow: 0 0 24px rgba(244, 63, 94, 0.15);
-}
-
-/* Tab active style */
-.nav-tab {
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.nav-tab.active {
-  color: #fff;
-  background: rgba(59, 130, 246, 0.12);
-  border-bottom: 2px solid var(--accent-blue);
+  box-shadow: 0 0 30px rgba(244, 63, 94, 0.12);
 }
 
 /* Struck-through badge for denied actions */
 .denied-chip {
   text-decoration: line-through;
-  opacity: 0.65;
+  opacity: 0.75;
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #FCA5A5;
@@ -111,7 +107,7 @@ body {
   color: #6EE7B7;
 }
 
-/* Button micro-interactions */
+/* Buttons */
 .btn-primary {
   background: linear-gradient(135deg, #2563EB, #1D4ED8);
   color: #FFFFFF;
@@ -127,7 +123,7 @@ body {
 }
 .btn-primary:hover {
   background: linear-gradient(135deg, #3B82F6, #2563EB);
-  box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 0 18px rgba(37, 99, 235, 0.4);
   transform: translateY(-1px);
 }
 .btn-primary:active {
@@ -166,15 +162,6 @@ body {
   gap: 8px;
 }
 .btn-danger:hover {
-  box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+  box-shadow: 0 0 22px rgba(220, 38, 38, 0.5);
   transform: translateY(-1px);
-}
-
-/* Animations */
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s infinite ease-in-out;
 }
