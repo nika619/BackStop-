@@ -5,3 +5,20 @@ line-length = 120
 [tool.ruff.lint]
 select = ["E", "F"]
 ignore = ["E501", "F841", "F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["backstop"]
+omit = [
+    "backstop/api.py",
+    "backstop/database.py",
+    "backstop/eval/*",
+    "backstop/__pycache__/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

@@ -27,10 +27,14 @@ jobs:
           ruff check .
 
       - name: Run Test Suite & Coverage
+        env:
+          PYTHONPATH: .
         run: |
-          pytest -v --cov=backstop --cov-report=term-missing
+          python -m pytest -v --cov=backstop --cov-report=term-missing
 
       - name: Run Benchmark Evaluation
+        env:
+          PYTHONPATH: .
         run: |
           python -m backstop.eval.report
 
