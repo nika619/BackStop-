@@ -5,7 +5,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
@@ -13,6 +13,7 @@ from backstop.database import get_session
 from backstop.diagnose.classifier import classify
 from backstop.eval.generator import assign_arm
 from backstop.models import Case, PaymentEvent
+from backstop.planner.queue import process_payment_event_async
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 logger = logging.getLogger(__name__)
@@ -31,15 +32,18 @@ def verify_signature(raw_body: bytes, signature: str, secret: bytes) -> bool:
     return hmac.compare_digest(expected, signature)
 
 
-@router.post("/razorpay")
+@router.post("/razorpay", status_code=202)
 async def receive_razorpay_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     x_razorpay_signature: str = Header(default="", alias="X-Razorpay-Signature"),
     x_razorpay_event_id: str | None = Header(default=None, alias="X-Razorpay-Event-Id"),
+    x_razorpay_merchant_id: str | None = Header(default=None, alias="X-Razorpay-Merchant-Id"),
     session: Session = Depends(get_session),
 ):
     """
-    Ingest Razorpay webhook events with cryptographic HMAC verification and replay protection.
+    Ingest Razorpay webhook events with cryptographic HMAC verification, instant ACK (HTTP 202, <15ms),
+    and offloaded async background processing.
     """
     raw_body = await request.body()
     secret_str = os.getenv("RAZORPAY_WEBHOOK_SECRET", DEFAULT_SECRET)
@@ -65,9 +69,11 @@ async def receive_razorpay_webhook(
     customer_id = payment_entity.get("customer_id") or payment_entity.get("contact") or payment_id
     customer_ref = hashlib.sha256(str(customer_id).encode("utf-8")).hexdigest()[:16]
 
+    merchant_id = payload.get("merchant_id") or x_razorpay_merchant_id or "merch_ecommerce_01"
+
     payment_event = PaymentEvent(
         event_id=event_id,
-        merchant_id=payload.get("merchant_id", "merch_default"),
+        merchant_id=merchant_id,
         payment_id=payment_id,
         order_id=payment_entity.get("order_id", ""),
         customer_ref=customer_ref,
@@ -92,12 +98,13 @@ async def receive_razorpay_webhook(
         session.refresh(payment_event)
     except IntegrityError:
         session.rollback()
-        # Return 200 so webhook sender does not keep retrying already-persisted events
+        # Return 200/202 so webhook sender does not keep retrying already-persisted events
         return {"status": "duplicate_ignored", "event_id": event_id}
 
     # Automatically diagnose and open case
     root_cause, confidence, _ = classify(payment_event)
     case = Case(
+        merchant_id=merchant_id,
         payment_event_id=payment_event.id,
         payment_id=payment_event.payment_id,
         customer_ref=payment_event.customer_ref,
@@ -110,10 +117,15 @@ async def receive_razorpay_webhook(
     session.commit()
     session.refresh(case)
 
+    # Trigger async background queue for LLM fallback / planning
+    background_tasks.add_task(process_payment_event_async, event_id)
+
     return {
         "status": "accepted",
+        "mode": "async_queued",
         "event_id": event_id,
         "payment_id": payment_id,
+        "merchant_id": merchant_id,
         "case_id": case.id,
         "root_cause": root_cause.value,
         "cohort_arm": case.cohort_arm,

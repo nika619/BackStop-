@@ -5,7 +5,7 @@ export default function PolicyScreen() {
   const [policies, setPolicies] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/policies')
+    fetch('http://127.0.0.1:8000/api/policies')
       .then(r => r.json())
       .then(data => setPolicies(data.rules || []))
       .catch(err => console.error(err));

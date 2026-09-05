@@ -5,7 +5,7 @@ import re
 from typing import Any
 
 from backstop.models import Action, Case, PaymentEvent
-from backstop.planner.prompt import SYSTEM_PROMPT
+from backstop.planner.prompt import PROMPT_VERSION, SYSTEM_PROMPT
 from backstop.planner.redact import redact
 
 logger = logging.getLogger(__name__)
@@ -122,16 +122,7 @@ def plan(case: Case, event: PaymentEvent, permitted: frozenset[Action]) -> tuple
 
         except Exception as e:
             logger.warning(f"Planner attempt #{attempt + 1} failed: {e}")
-            if attempt == 1:
-                # Fall back to safest permitted action on exhaustion
-                safe_choice = safest(permitted)
-                return safe_choice, {
-                    "action": safe_choice.value,
-                    "reason": f"Fallback to safest action after planner error: {e!s}",
-                    "delay_hours": 0,
-                    "message_tone": "neutral",
-                    "fallback": True,
-                }
+            return heuristic_plan(case, permitted)
 
     safe_choice = safest(permitted)
     return safe_choice, {"action": safe_choice.value, "reason": "Planner safety fallback", "delay_hours": 0, "message_tone": "neutral"}

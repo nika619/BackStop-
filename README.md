@@ -139,32 +139,35 @@ All three strategies are evaluated against the same 1,000-case seeded corpus. Th
 
 ---
 
-## 7. The Compliance Cage (RBI 2026 & TRAI Regulations)
+## 7. The Compliance & Telemetry Cage (15 Machine-Executable Rules)
 
-Backstop encodes 14 machine-executable rules documented in [`docs/POLICY.md`](docs/POLICY.md):
+Backstop encodes 15 machine-executable rules documented in [`docs/POLICY.md`](docs/POLICY.md):
 
-1. **R01 (Kill Switch):** Immediate emergency halt of all automated recovery actions.
+1. **R01 (Kill Switch):** Immediate emergency halt of all automated recovery actions (Global or Per-Merchant).
 2. **R02 (Risk Hard Stop):** `payment_risk_check_failed` and compliance flags route strictly to `ESCALATE_HUMAN`.
 3. **R03 (Terminal Cause Never Retry):** Expired cards, invalid VPAs, or blocked instruments are barred from retries.
-4. **R04 (Attempt Cap):** Maximum 3 programmatic retries per payment.
+4. **R04 (Attempt Cap):** Maximum merchant-configured programmatic retries per payment (`max_attempts`).
 5. **R05 (Cool-off Window):** 0h, 4h, and 48h backoff windows between retries.
-6. **R06 (TRAI Quiet Hours):** Outbound customer comms blocked outside **09:00–21:00 IST** (evaluated in Indian Standard Time).
+6. **R06 (TRAI Quiet Hours):** Outbound customer comms blocked outside merchant quiet hours (e.g., **09:00–21:00 IST**).
 7. **R07 (Daily Contact Cap):** Max 2 messages per customer per day.
 8. **R08 (DND / Consent):** Hard block on opted-out or DND-registered numbers.
-9. **R09 (RBI E-mandate 2026 Notice):** Mandatory $\ge 24$h pre-debit notice before retrying recurring subscriptions.
+9. **R09 (RBI E-mandate 2026 Notice & Delivery Receipt):** Mandatory $\ge 24$h pre-debit notice AND verified delivery receipt (`DELIVERED`) before retrying recurring subscriptions.
 10. **R10 (RBI E-mandate 2026 AFA Ceilings):** ₹15,000 default ceiling; ₹1,00,000 elevated ceiling for Insurance, Mutual Funds, and Credit Card bills.
 11. **R11 (Promise-to-Pay Freeze):** Freezes chasing when customer commits to a future payment date.
 12. **R12 (Merchant Config Defect):** Customer is never contacted for merchant integration bugs (`ALERT_MERCHANT` only).
-13. **R13 (Incentive Budget Cap):** Rail-switch promotional discounts capped at merchant batch budget.
+13. **R13 (Incentive Budget Cap):** Rail-switch promotional discounts capped per isolated merchant budget (`incentive_budget_paise`).
 14. **R14 (Control Arm Isolation):** Held-out control arm observes only (`NO_ACTION`).
+15. **R15 (Live Bank Telemetry & Outage Cool-off):** If target bank health drops below $70\%$ (e.g. HDFC outage), retries are delayed by $+2\text{h}$ to prevent burning attempt caps.
 
 ---
 
-## 8. What We Deliberately Did Not Build (Scope Discipline)
+## 8. Enterprise Core Architecture Features (Backstop 2.0)
 
-- **No Voice Recovery (Hinglish):** High demo hype, zero provable unit economics in 4 days.
-- **No Multi-tenancy Isolation:** Scoped cleanly to a single merchant instance.
-- **No Production PAN/CVV Handling:** Operates strictly on tokenized handles under test mode.
+- **MID Multi-Tenancy Isolation:** Full isolation across `merchant_id` (`merch_ecommerce_01`, `merch_saas_sub_02`) with independent budget caps, attempt caps, quiet hour windows, and console UI telemetry.
+- **Redis Distributed SETNX Idempotency Locks:** Multi-pod Kubernetes safety with Redis locking key `lock:idempotency:{mid}:{payment_id}:{attempt_no}` (60s TTL) and thread-safe fallback.
+- **Native Razorpay API Integration:** Built-in SDK headers (`X-Razorpay-Idempotency-Header`) and order cancellation (`POST /v1/orders/{order_id}/cancel`) during rail switches to eliminate double payments.
+- **Async Webhook Queue (<15ms ACK):** Immediate HTTP `202 Accepted` response on webhook ingest, offloading LLM classification to async task queues.
+- **No Production PAN/CVV Handling:** Operates strictly on tokenized handles under PCI-DSS compliance.
 
 ---
 

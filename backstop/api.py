@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from backstop.database import get_session, init_db
+from backstop.diagnose.bank_health import get_bank_health, set_bank_health
 from backstop.diagnose.taxonomy import (
     CAUSE_TO_CANDIDATE_ACTIONS,
     HARD_STOP,
@@ -19,7 +20,15 @@ from backstop.ingest.batch import import_batch_records
 from backstop.ingest.webhook import router as webhook_router
 from backstop.ledger.chain import append as append_ledger
 from backstop.ledger.chain import tamper_entry, verify_chain
-from backstop.models import Action, Case, LedgerEntry, PaymentEvent, RootCause
+from backstop.models import (
+    Action,
+    BankHealthTelemetry,
+    Case,
+    LedgerEntry,
+    MerchantPolicy,
+    PaymentEvent,
+    RootCause,
+)
 from backstop.planner.planner import PROMPT_VERSION, plan
 from backstop.planner.redact import redact
 from backstop.policy.calendar import to_ist
@@ -140,16 +149,46 @@ def get_benchmark(recompute: bool = False):
     return CACHED_BENCHMARK
 
 
+@app.get("/api/merchants")
+def list_merchants(session: Session = Depends(get_session)):
+    """Retrieve all isolated multi-tenant merchant configurations."""
+    merchants = session.exec(select(MerchantPolicy)).all()
+    return {"merchants": merchants}
+
+
+@app.get("/api/bank-health")
+def list_bank_health(session: Session = Depends(get_session)):
+    """Retrieve real-time bank health success rate telemetry and outage indicators."""
+    telemetry = session.exec(select(BankHealthTelemetry)).all()
+    return {"banks": telemetry}
+
+
+class BankHealthUpdateRequest(BaseModel):
+    bank_code: str
+    success_rate: float
+    is_outage: bool = False
+
+
+@app.post("/api/bank-health")
+def update_bank_health(req: BankHealthUpdateRequest, session: Session = Depends(get_session)):
+    """Simulate or update live bank health telemetry (e.g. HDFC outage simulation)."""
+    set_bank_health(req.bank_code, req.success_rate, req.is_outage)
+    return {"status": "updated", "bank_code": req.bank_code, "success_rate": req.success_rate, "is_outage": req.is_outage}
+
+
 @app.get("/api/cases")
 def list_cases(
     limit: int = Query(default=50, le=500),
     offset: int = Query(default=0, ge=0),
+    merchant_id: str | None = None,
     root_cause: str | None = None,
     cohort_arm: str | None = None,
     status: str | None = None,
     session: Session = Depends(get_session),
 ):
     query = select(Case, PaymentEvent).where(Case.payment_event_id == PaymentEvent.id)
+    if merchant_id:
+        query = query.where(Case.merchant_id == merchant_id)
     if root_cause:
         query = query.where(Case.root_cause == root_cause)
     if cohort_arm:
@@ -164,6 +203,7 @@ def list_cases(
     for c, ev in results:
         cases_out.append({
             "case_id": c.id,
+            "merchant_id": c.merchant_id,
             "payment_id": ev.payment_id,
             "customer_ref": c.customer_ref,
             "amount_inr": ev.amount_paise / 100.0,

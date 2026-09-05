@@ -16,7 +16,7 @@ export default function SecurityScreen({ killSwitchEngaged, onToggleKillSwitch }
 
   const fetchLedgerStatus = () => {
     setLoadingLedger(true);
-    fetch('http://localhost:8000/api/ledger/verify')
+    fetch('http://127.0.0.1:8000/api/ledger/verify')
       .then(r => r.json())
       .then(data => {
         setLedgerStatus(data);
@@ -33,7 +33,7 @@ export default function SecurityScreen({ killSwitchEngaged, onToggleKillSwitch }
   }, []);
 
   const handleSimulateTamper = () => {
-    fetch('http://localhost:8000/api/ledger/tamper', {
+    fetch('http://127.0.0.1:8000/api/ledger/tamper', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ seq: 2, fake_amount_paise: 99999900 }),
@@ -50,7 +50,7 @@ export default function SecurityScreen({ killSwitchEngaged, onToggleKillSwitch }
     e.preventDefault();
     if (!injectionInput) return;
     setTestingInjection(true);
-    fetch('http://localhost:8000/api/planner/test-injection', {
+    fetch('http://127.0.0.1:8000/api/planner/test-injection', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

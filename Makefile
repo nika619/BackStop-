@@ -1,4 +1,4 @@
-.PHONY: setup demo test eval console clean
+.PHONY: setup demo start test eval console clean
 
 setup:
 	python -m pip install -r requirements.txt
@@ -11,8 +11,10 @@ eval:
 	python -m backstop.eval.report
 
 demo:
-	python -m backstop.eval.report
-	python -m uvicorn backstop.api:app --reload --port 8000
+	python run.py
+
+start:
+	python run.py
 
 console:
 	cd console && npm run dev

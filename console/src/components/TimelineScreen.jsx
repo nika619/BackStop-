@@ -25,7 +25,7 @@ export default function TimelineScreen({ cases, selectedCaseId, onSelectCase, on
   useEffect(() => {
     if (!selectedCaseId) return;
     setLoadingTimeline(true);
-    fetch(`http://localhost:8000/api/cases/${selectedCaseId}/timeline`)
+    fetch(`http://127.0.0.1:8000/api/cases/${selectedCaseId}/timeline`)
       .then(r => r.json())
       .then(data => {
         setTimelineData(data);

@@ -60,6 +60,7 @@ def import_batch_records(session: Session, records: list[dict]) -> tuple[int, in
 
             root_cause, confidence, _ = classify(event)
             case = Case(
+                merchant_id=event.merchant_id,
                 payment_event_id=event.id,
                 payment_id=event.payment_id,
                 customer_ref=event.customer_ref,

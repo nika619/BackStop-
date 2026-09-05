@@ -2,12 +2,13 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
+from backstop.diagnose.bank_health import get_bank_health
 from backstop.diagnose.taxonomy import (
     CAUSE_TO_CANDIDATE_ACTIONS,
     HARD_STOP,
     NEVER_RETRY,
 )
-from backstop.models import Action, Case, PaymentEvent, RootCause
+from backstop.models import Action, Case, MerchantPolicy, PaymentEvent, RootCause
 from backstop.policy.calendar import to_ist
 
 POLICY_VERSION = "2026.09.01"
@@ -34,11 +35,13 @@ class Verdict:
 class PolicyContext:
     agent_enabled: bool = True
     dry_run: bool = True
+    merchant_id: str = "merch_ecommerce_01"
     incentive_budget_paise: int = 500_000_00  # ₹50,000 budget in paise
     incentive_spent_paise: int = 0
     _contacts_today_fn: Callable[[str], int] | None = None
     _is_dnd_fn: Callable[[str], bool] | None = None
     _predebit_notice_fn: Callable[[str], datetime | None] | None = None
+    _predebit_status_fn: Callable[[str], str] | None = None
     _has_approval_fn: Callable[[str], bool] | None = None
     _executed_keys: set[str] = field(default_factory=set)
 
@@ -57,6 +60,11 @@ class PolicyContext:
             return self._predebit_notice_fn(case_id)
         return None
 
+    def predebit_notice_status(self, case_id: str) -> str:
+        if self._predebit_status_fn:
+            return self._predebit_status_fn(case_id)
+        return "DELIVERED"
+
     def has_approval(self, case_id: str) -> bool:
         if self._has_approval_fn:
             return self._has_approval_fn(case_id)
@@ -69,9 +77,15 @@ class PolicyContext:
         self._executed_keys.add(idempotency_key)
 
 
-def evaluate(case: Case, event: PaymentEvent, ctx: PolicyContext, now: datetime) -> Verdict:
+def evaluate(
+    case: Case,
+    event: PaymentEvent,
+    ctx: PolicyContext,
+    now: datetime,
+    merchant_policy: MerchantPolicy | None = None,
+) -> Verdict:
     """
-    Deterministic policy engine.
+    Deterministic policy engine with MID Multi-tenancy Isolation & Bank Telemetry.
     Every time-dependent check consumes explicit `now: datetime`.
     Guarantees deterministic, reproducible, testable verdicts.
     """
@@ -80,6 +94,12 @@ def evaluate(case: Case, event: PaymentEvent, ctx: PolicyContext, now: datetime)
     denied: dict[Action, str] = {}
     triggers: list[str] = []
 
+    # Dynamic merchant policy overrides
+    q_start = merchant_policy.quiet_start_hour if merchant_policy else QUIET_START
+    q_end = merchant_policy.quiet_end_hour if merchant_policy else QUIET_END
+    m_attempts = merchant_policy.max_attempts if merchant_policy else MAX_ATTEMPTS
+    m_budget = merchant_policy.incentive_budget_paise if merchant_policy else ctx.incentive_budget_paise
+
     def deny(action: Action, rule_id: str, reason: str):
         if action in candidates:
             candidates.discard(action)
@@ -87,11 +107,11 @@ def evaluate(case: Case, event: PaymentEvent, ctx: PolicyContext, now: datetime)
             triggers.append(f"{rule_id}:{action.value}")
 
     # R01 — Global Kill Switch. Absolute first line.
-    if not ctx.agent_enabled:
+    if not ctx.agent_enabled or (merchant_policy and not merchant_policy.auto_recovery_enabled):
         triggers.append("R01:kill_switch")
         return Verdict(
             permitted=frozenset({Action.NO_ACTION}),
-            denied={a: "R01: Global kill switch engaged" for a in candidates if a != Action.NO_ACTION},
+            denied={a: "R01: Global or merchant kill switch engaged" for a in candidates if a != Action.NO_ACTION},
             rule_triggers=triggers,
         )
 
@@ -117,9 +137,9 @@ def evaluate(case: Case, event: PaymentEvent, ctx: PolicyContext, now: datetime)
     if case.root_cause in NEVER_RETRY:
         deny(Action.RETRY_SAME_RAIL, "R03", f"Root cause '{case.root_cause.value}' cannot be fixed by retrying")
 
-    # R04 — Attempt Cap: Maximum retry limit reached.
-    if case.attempt_no >= MAX_ATTEMPTS:
-        deny(Action.RETRY_SAME_RAIL, "R04", f"Maximum attempt cap ({MAX_ATTEMPTS}) reached")
+    # R04 — Attempt Cap: Maximum retry limit reached for merchant.
+    if case.attempt_no >= m_attempts:
+        deny(Action.RETRY_SAME_RAIL, "R04", f"Maximum merchant attempt cap ({m_attempts}) reached")
 
     # R05 — Cool-off Window between retries.
     wait_hours = COOL_OFF_HOURS.get(case.attempt_no, 48)
@@ -131,10 +151,10 @@ def evaluate(case: Case, event: PaymentEvent, ctx: PolicyContext, now: datetime)
         if curr_now - last_at < timedelta(hours=wait_hours):
             deny(Action.RETRY_SAME_RAIL, "R05", f"Cool-off window of {wait_hours}h has not elapsed since last attempt")
 
-    # R06 — TRAI Quiet Hours (Commercial Comms restricted outside 09:00–21:00 IST).
-    if not (QUIET_START <= now_ist.hour < QUIET_END):
+    # R06 — TRAI Quiet Hours (Commercial Comms restricted outside quiet window IST).
+    if not (q_start <= now_ist.hour < q_end):
         for a in (Action.NUDGE_CHECKOUT, Action.SWITCH_RAIL_LINK, Action.UPDATE_INSTRUMENT):
-            deny(a, "R06", f"TRAI quiet hours: customer contact forbidden outside {QUIET_START}:00–{QUIET_END}:00 IST (current: {now_ist.strftime('%H:%M')} IST)")
+            deny(a, "R06", f"TRAI quiet hours: customer contact forbidden outside {q_start}:00–{q_end}:00 IST (current: {now_ist.strftime('%H:%M')} IST)")
 
     # R07 — Daily Contact Cap: Anti-harassment limitation.
     if ctx.contacts_today(case.customer_ref) >= MAX_CONTACTS_PER_DAY:
@@ -146,12 +166,15 @@ def evaluate(case: Case, event: PaymentEvent, ctx: PolicyContext, now: datetime)
         for a in (Action.NUDGE_CHECKOUT, Action.SWITCH_RAIL_LINK, Action.UPDATE_INSTRUMENT):
             deny(a, "R08", "Customer has active DND / revoked comms consent")
 
-    # R09 — RBI Digital Payments E-mandate Framework 2026: Pre-debit notice ≥ 24h.
+    # R09 — RBI Digital Payments E-mandate Framework 2026: Pre-debit notice ≥ 24h & Delivery Receipt.
     if event.is_recurring:
         notice_time = ctx.predebit_notice_sent_at(case.id)
+        notice_status = ctx.predebit_notice_status(case.id)
         curr_now = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
         if notice_time is None:
             deny(Action.RETRY_SAME_RAIL, "R09", "RBI E-mandate 2026: 24h pre-debit notification was not recorded")
+        elif notice_status != "DELIVERED":
+            deny(Action.RETRY_SAME_RAIL, "R09", f"RBI E-mandate 2026: Pre-debit notice delivery status is '{notice_status}' (must be DELIVERED)")
         else:
             if notice_time.tzinfo is None:
                 notice_time = notice_time.replace(tzinfo=timezone.utc)
@@ -179,9 +202,16 @@ def evaluate(case: Case, event: PaymentEvent, ctx: PolicyContext, now: datetime)
         for a in (Action.NUDGE_CHECKOUT, Action.RETRY_SAME_RAIL, Action.SWITCH_RAIL_LINK, Action.UPDATE_INSTRUMENT):
             deny(a, "R12", "Defect is merchant-side configuration/integration; customer contact strictly prohibited")
 
-    # R13 — Incentive Budget Cap: Rail switch discounts cap.
-    if ctx.incentive_spent_paise >= ctx.incentive_budget_paise:
-        deny(Action.SWITCH_RAIL_LINK, "R13", "Batch promotional incentive budget exhausted")
+    # R13 — Incentive Budget Cap: Rail switch discounts cap per merchant.
+    if ctx.incentive_spent_paise >= m_budget:
+        deny(Action.SWITCH_RAIL_LINK, "R13", f"Merchant incentive budget (₹{m_budget/100:,.2f}) exhausted")
+
+    # R15 — Live Bank Telemetry & Outage Cool-off.
+    target_bank = (event.raw or {}).get("bank_code") or event.error_source or "UNKNOWN"
+    bank_health = get_bank_health(str(target_bank))
+    if bank_health < 0.70:
+        if case.root_cause == RootCause.TRANSIENT_INFRA or event.error_reason in ("gateway_technical_error", "bank_not_available", "issuer_technical_error"):
+            deny(Action.RETRY_SAME_RAIL, "R15", f"Target bank ({target_bank}) success rate is {bank_health*100:.0f}% (< 70% threshold); enforcing +2h outage cool-off")
 
     # NO_ACTION is always safe and permitted
     candidates.add(Action.NO_ACTION)

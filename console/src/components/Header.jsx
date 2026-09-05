@@ -1,7 +1,14 @@
 import React from 'react';
 import { ShieldCheck, Activity, Power, Lock, Cpu, Sparkles } from 'lucide-react';
 
-export default function Header({ activeTab, setActiveTab, killSwitchEngaged, onToggleKillSwitch }) {
+export default function Header({
+  activeTab,
+  setActiveTab,
+  killSwitchEngaged,
+  onToggleKillSwitch,
+  selectedMerchant = "merch_ecommerce_01",
+  onSelectMerchant,
+}) {
   return (
     <header className="sticky top-0 z-50 bg-[#07090E]/90 backdrop-blur-md border-b border-[#1F2839] px-6 sm:px-8 py-3">
       <div className="max-w-[1500px] w-full mx-auto flex items-center justify-between">
@@ -16,14 +23,27 @@ export default function Header({ activeTab, setActiveTab, killSwitchEngaged, onT
               <h1 className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
                 BACKSTOP
                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
-                  v1.0
+                  v2.0 Enterprise
                 </span>
               </h1>
             </div>
             <p className="text-xs text-slate-400 font-medium">
-              Deterministic Policy-Gated AI Revenue Recovery Engine • Track 03
+              Deterministic Policy-Gated AI Revenue Recovery Engine • Razorpay Core
             </p>
           </div>
+        </div>
+
+        {/* Multi-Tenant Merchant Selector */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0F131C] border border-[#1F2839]">
+          <span className="text-xs text-slate-400 font-medium">MID:</span>
+          <select
+            value={selectedMerchant}
+            onChange={(e) => onSelectMerchant && onSelectMerchant(e.target.value)}
+            className="bg-[#171D2A] text-xs text-blue-400 font-bold px-2 py-1 rounded border border-[#2B384E] outline-none cursor-pointer"
+          >
+            <option value="merch_ecommerce_01">Apex Retail (merch_ecommerce_01)</option>
+            <option value="merch_saas_sub_02">CloudScale SaaS (merch_saas_sub_02)</option>
+          </select>
         </div>
 
         {/* Navigation Tabs */}

@@ -17,7 +17,7 @@ export default function App() {
 
   const fetchBenchmark = (recompute = false) => {
     setLoadingBenchmark(true);
-    fetch(`http://localhost:8000/api/benchmark?recompute=${recompute}`)
+    fetch(`http://127.0.0.1:8000/api/benchmark?recompute=${recompute}`)
       .then(r => r.json())
       .then(data => {
         setBenchmark(data);
@@ -30,7 +30,7 @@ export default function App() {
   };
 
   const fetchCases = () => {
-    fetch('http://localhost:8000/api/cases?limit=100')
+    fetch('http://127.0.0.1:8000/api/cases?limit=100')
       .then(r => r.json())
       .then(data => {
         setCases(data.cases || []);
@@ -39,7 +39,7 @@ export default function App() {
   };
 
   const fetchKillSwitch = () => {
-    fetch('http://localhost:8000/api/kill-switch')
+    fetch('http://127.0.0.1:8000/api/kill-switch')
       .then(r => r.json())
       .then(data => {
         setKillSwitchEngaged(data.kill_switch_engaged);
@@ -55,7 +55,7 @@ export default function App() {
 
   const handleToggleKillSwitch = () => {
     const nextState = !killSwitchEngaged;
-    fetch('http://localhost:8000/api/kill-switch', {
+    fetch('http://127.0.0.1:8000/api/kill-switch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -73,7 +73,7 @@ export default function App() {
 
   const handleSeedDemo = () => {
     setSeeding(true);
-    fetch('http://localhost:8000/api/demo/seed?count=100', { method: 'POST' })
+    fetch('http://127.0.0.1:8000/api/demo/seed?count=100', { method: 'POST' })
       .then(r => r.json())
       .then(data => {
         setSeeding(false);
@@ -87,7 +87,7 @@ export default function App() {
   };
 
   const handleProcessCase = (caseId) => {
-    fetch(`http://localhost:8000/api/cases/${caseId}/process`, { method: 'POST' })
+    fetch(`http://127.0.0.1:8000/api/cases/${caseId}/process`, { method: 'POST' })
       .then(r => r.json())
       .then(data => {
         fetchCases();

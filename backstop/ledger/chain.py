@@ -28,6 +28,7 @@ def append(
     stage: str,
     payload: dict,
     policy_version: str,
+    merchant_id: str = "merch_ecommerce_01",
     prompt_version: str | None = None,
     outcome: str | None = None,
 ) -> LedgerEntry:
@@ -41,6 +42,7 @@ def append(
     entry_hash = digest(prev_hash, payload)
 
     entry = LedgerEntry(
+        merchant_id=merchant_id,
         case_id=case_id,
         payment_id=payment_id,
         actor=actor,

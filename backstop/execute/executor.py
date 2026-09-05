@@ -6,12 +6,15 @@ from typing import Any
 
 from sqlmodel import Session
 
+from backstop.execute.lock import acquire_idempotency_lock
+from backstop.execute.razorpay_client import RazorpayEnterpriseClient
 from backstop.execute.registry import TOOL_REGISTRY
 from backstop.ledger.chain import append as append_ledger
 from backstop.models import Action, Case, PaymentEvent
 from backstop.policy.engine import POLICY_VERSION, PolicyContext, evaluate
 
 logger = logging.getLogger(__name__)
+razorpay_client = RazorpayEnterpriseClient()
 
 
 @dataclass
@@ -38,17 +41,19 @@ def execute(
     Wall 2: Deterministic Post-Gate Re-Validation against physical record
     Wall 3: Tool Spend Cap Verification
     Wall 4: Four-Eyes Human Approval for material actions
-    Wall 5: SHA-256 Idempotency Key (prevents duplicate charges)
+    Wall 5: SHA-256 Distributed Idempotency Key (Redis SETNX lock, prevents duplicate charges)
     """
     params = params or {}
+    m_id = getattr(event, "merchant_id", None) or getattr(case, "merchant_id", "merch_ecommerce_01")
     idempotency_key = hashlib.sha256(
-        f"{event.payment_id}|{action.value}|{case.attempt_no}".encode()
+        f"{m_id}|{event.payment_id}|{action.value}|{case.attempt_no}".encode()
     ).hexdigest()
 
     # --- WALL 1: Global Kill Switch ---
     if not ctx.agent_enabled:
         append_ledger(
             session=session,
+            merchant_id=m_id,
             case_id=case.id,
             payment_id=event.payment_id,
             actor="system",
@@ -71,6 +76,7 @@ def execute(
         deny_reason = verdict.denied.get(action, "Not permitted by current policy")
         append_ledger(
             session=session,
+            merchant_id=m_id,
             case_id=case.id,
             payment_id=event.payment_id,
             actor="policy_engine",
@@ -101,6 +107,7 @@ def execute(
     if event.amount_paise > tool.max_amount_paise:
         append_ledger(
             session=session,
+            merchant_id=m_id,
             case_id=case.id,
             payment_id=event.payment_id,
             actor="executor",
@@ -121,6 +128,7 @@ def execute(
     if tool.requires_approver and not ctx.has_approval(case.id):
         append_ledger(
             session=session,
+            merchant_id=m_id,
             case_id=case.id,
             payment_id=event.payment_id,
             actor="executor",
@@ -137,25 +145,39 @@ def execute(
             details={},
         )
 
-    # --- WALL 5: Idempotency Key ---
-    if ctx.already_executed(idempotency_key):
+    # --- WALL 5: Redis Distributed SETNX Idempotency Lock ---
+    lock_acquired = acquire_idempotency_lock(
+        merchant_id=m_id,
+        payment_id=event.payment_id,
+        attempt_no=case.attempt_no,
+        ttl_seconds=60,
+    )
+    if not lock_acquired or ctx.already_executed(idempotency_key):
         return ExecutionOutcome(
             status="duplicate_noop",
             action=action,
             idempotency_key=idempotency_key,
-            reason=f"Wall 5: Idempotency key {idempotency_key[:12]}... already processed",
+            reason=f"Wall 5: Idempotency lock active ({idempotency_key[:12]}...), duplicate execution prevented across pods",
             details={},
         )
 
-    # Mark idempotency key as consumed
+    # Mark idempotency key as consumed locally as well
     ctx.mark_executed(idempotency_key)
+
+    # Additional execution safeguards: Order cancellation for rail switch
+    extra_details = {}
+    if action == Action.SWITCH_RAIL_LINK and event.order_id:
+        cancel_res = razorpay_client.cancel_order(event.order_id, idempotency_key=idempotency_key)
+        extra_details["cancelled_original_order"] = cancel_res
 
     # Record execution in ledger
     exec_result = tool.fn(case, event, params)
+    exec_result.update(extra_details)
     status_str = "simulated" if ctx.dry_run else "executed"
 
     append_ledger(
         session=session,
+        merchant_id=m_id,
         case_id=case.id,
         payment_id=event.payment_id,
         actor="executor",
