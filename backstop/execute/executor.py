@@ -175,6 +175,34 @@ def execute(
     exec_result.update(extra_details)
     status_str = "simulated" if ctx.dry_run else "executed"
 
+    # If schedule_followup signals it, persist the QueueJob in the executor's existing session
+    # (avoids nested session / SQLite lock that would occur in the tool fn itself)
+    if exec_result.get("persist_queue_job"):
+        try:
+            from backstop.models import QueueJob
+            from sqlmodel import select as sql_select
+            followup_id = exec_result.get("followup_event_id", f"followup_{event.event_id}_{case.attempt_no}")
+            existing_job = session.exec(sql_select(QueueJob).where(QueueJob.event_id == followup_id)).first()
+            if not existing_job:
+                followup_job = QueueJob(
+                    event_id=followup_id,
+                    merchant_id=m_id,
+                    status="pending",
+                    attempts=0,
+                    max_attempts=3,
+                )
+                session.add(followup_job)
+                session.flush()
+                exec_result["job_id"] = followup_job.id
+                exec_result["persisted"] = True
+            else:
+                exec_result["job_id"] = existing_job.id
+                exec_result["persisted"] = True
+        except Exception as e:
+            logger.warning("Failed to persist QueueJob for schedule_followup: %s", e)
+            exec_result["persisted"] = False
+            exec_result["persist_error"] = str(e)
+
     append_ledger(
         session=session,
         merchant_id=m_id,

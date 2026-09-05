@@ -80,14 +80,28 @@ class Case(SQLModel, table=True):
     cause_confidence: float = 0.0
     attempt_no: int = 0
     contacts_sent: int = 0
-    status: str = "open"  # open | recovered | abandoned | escalated | blocked
+    status: str = "open"  # open | action_dispatched | awaiting_capture | recovered | abandoned | escalated | blocked | closed
     cohort_arm: str = "treatment"  # treatment | control
     recovered_paise: int = 0
+    recovery_payment_id: str | None = None  # Razorpay payment_id from incoming capture webhook
+    recovery_ref: str | None = None  # Reference / Link ID for attribution
     promise_to_pay_at: datetime | None = None
     last_action_at: datetime | None = None
     last_action: Action | None = None
     notes: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class QueueJob(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    event_id: str = Field(index=True, unique=True)
+    merchant_id: str = Field(default="merch_ecommerce_01", index=True)
+    status: str = Field(default="pending", index=True)  # pending | processing | completed | failed
+    attempts: int = Field(default=0)
+    max_attempts: int = Field(default=3)
+    error_message: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class LedgerEntry(SQLModel, table=True):

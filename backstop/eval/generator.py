@@ -68,7 +68,7 @@ def generate(n: int = 1000, seed: int = 20260901) -> list[dict]:
         pid = f"pay_SYN{i:06d}"
         reason = rng.choices(reasons, weights=weights, k=1)[0]
         customer_id_num = i % 340
-        customer_hash = hashlib.sha256(f"cust_{customer_id_num}".encode()).hexdigest()[:16]
+        customer_hash = hashlib.sha256(f"cust_{customer_id_num}".encode()).hexdigest()  # Full 64-char digest
 
         amount = rng.choice([49900, 99900, 149900, 249900, 599900, 1499900, 2500000])
         method = rng.choices(["upi", "card", "netbanking", "wallet"], weights=[0.52, 0.31, 0.12, 0.05])[0]

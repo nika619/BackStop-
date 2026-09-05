@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -46,7 +47,17 @@ CACHED_BENCHMARK = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    # Recover any QueueJobs that were interrupted by a previous pod restart/OOM
+    from backstop.ingest.queue_worker import recover_interrupted_jobs, queue_drain_loop
+    recover_interrupted_jobs()
+    # Start the persistent DB-backed queue drain loop (replaces volatile BackgroundTasks)
+    drain_task = asyncio.create_task(queue_drain_loop())
     yield
+    drain_task.cancel()
+    try:
+        await drain_task
+    except asyncio.CancelledError:
+        pass
 
 
 app = FastAPI(
@@ -394,9 +405,26 @@ def process_single_case(case_id: str, session: Session = Depends(get_session)):
     if chosen_action in (Action.NUDGE_CHECKOUT, Action.SWITCH_RAIL_LINK, Action.UPDATE_INSTRUMENT):
         case.contacts_sent += 1
 
-    if outcome.status == "executed" or outcome.status == "simulated":
-        case.status = "recovered" if chosen_action != Action.NO_ACTION else "closed"
-        case.recovered_paise = event.amount_paise if case.status == "recovered" else 0
+    if outcome.status in ("executed", "simulated"):
+        if chosen_action == Action.NO_ACTION:
+            # Deliberate inaction — close cleanly with no revenue credit
+            case.status = "closed"
+            case.recovered_paise = 0
+        elif chosen_action == Action.ESCALATE_HUMAN:
+            case.status = "escalated"
+            case.recovered_paise = 0
+        else:
+            # Action dispatched — customer must actually pay before recovery is credited.
+            # True recovery is confirmed only when payment.captured / order.paid webhook arrives.
+            case.status = "action_dispatched"
+            case.recovered_paise = 0  # NEVER credit revenue at dispatch time
+            # Store payment_link_id for attribution on capture webhook
+            recovery_ref = (
+                outcome.details.get("payment_link_id")
+                or outcome.details.get("api_response", {}).get("id")
+            )
+            if recovery_ref:
+                case.recovery_ref = recovery_ref
     elif outcome.status == "blocked":
         case.status = "blocked"
     elif outcome.status == "pending_approval":
@@ -411,6 +439,9 @@ def process_single_case(case_id: str, session: Session = Depends(get_session)):
         "case_id": case.id,
         "chosen_action": chosen_action.value,
         "execution_outcome": outcome.status,
+        "case_status": case.status,
+        "recovery_ref": case.recovery_ref,
+        "note": "Case marked action_dispatched. Revenue credited only on payment.captured webhook.",
         "reason": outcome.reason,
     }
 
@@ -573,10 +604,26 @@ def seed_demo_data(count: int = 100, session: Session = Depends(get_session)):
             continue
         verdict = evaluate(case, event, ctx, now_dt)
         chosen_action, plan_details = plan(case, event, verdict.permitted)
-        execute(chosen_action, case, event, ctx, session, now_dt, params=plan_details)
+        outcome = execute(chosen_action, case, event, ctx, session, now_dt, params=plan_details)
         case.last_action = chosen_action
-        case.status = "recovered" if chosen_action not in (Action.NO_ACTION, Action.ESCALATE_HUMAN) else "open"
-        case.recovered_paise = event.amount_paise if case.status == "recovered" else 0
+        case.attempt_no += 1
+        case.last_action_at = now_dt
+        # Correct lifecycle: dispatch ≠ recovery
+        if chosen_action == Action.NO_ACTION:
+            case.status = "closed"
+            case.recovered_paise = 0
+        elif chosen_action == Action.ESCALATE_HUMAN:
+            case.status = "escalated"
+            case.recovered_paise = 0
+        else:
+            case.status = "action_dispatched"
+            case.recovered_paise = 0
+            recovery_ref = (
+                outcome.details.get("payment_link_id")
+                or outcome.details.get("api_response", {}).get("id")
+            )
+            if recovery_ref:
+                case.recovery_ref = recovery_ref
         session.add(case)
 
     session.commit()

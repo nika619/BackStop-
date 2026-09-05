@@ -40,7 +40,7 @@ git clone https://github.com/nika619/BackStop-.git && cd BackStop-
 # 2. Setup dependencies (Python 3.11+ & Node 20+)
 make setup
 
-# 3. Run full automated test suite (62 unit & chaos tests)
+# 3. Run full automated test suite (82 unit & chaos tests)
 make test
 
 # 4. Reproduce empirical evaluation benchmark
@@ -163,10 +163,14 @@ Backstop encodes 15 machine-executable rules documented in [`docs/POLICY.md`](do
 
 ## 8. Enterprise Core Architecture Features (Backstop 2.0)
 
+- **Real Tool Execution Engine (`backstop/execute/registry.py`):** Fully programmatic actions calling Razorpay APIs (Payment Links, Recurring Debits, Orders, Nudges, Followup Jobs) rather than mocked stubs.
+- **Persistent DB-Backed Job Queue (`backstop/ingest/queue_worker.py`):** Replaced volatile in-memory queues with durable `QueueJob` storage, supporting background worker loops and automated crash recovery (`recover_interrupted_jobs()`) across restarts.
+- **True Two-Phase Lifecycle Closure:** Action dispatch transitions cases to `action_dispatched` (`recovered_paise = 0`); recovery is finalized (`recovered`) strictly upon verified inbound `payment.captured`, `order.paid`, or `payment_link.paid` webhook events.
+- **Full 64-Character SHA-256 Digest:** Full 64-char hex digests for A/B allocation and idempotency hashing, eliminating 16-char truncation collision risks across high-volume pipelines.
 - **MID Multi-Tenancy Isolation:** Full isolation across `merchant_id` (`merch_ecommerce_01`, `merch_saas_sub_02`) with independent budget caps, attempt caps, quiet hour windows, and console UI telemetry.
 - **Redis Distributed SETNX Idempotency Locks:** Multi-pod Kubernetes safety with Redis locking key `lock:idempotency:{mid}:{payment_id}:{attempt_no}` (60s TTL) and thread-safe fallback.
 - **Native Razorpay API Integration:** Built-in SDK headers (`X-Razorpay-Idempotency-Header`) and order cancellation (`POST /v1/orders/{order_id}/cancel`) during rail switches to eliminate double payments.
-- **Async Webhook Queue (<15ms ACK):** Immediate HTTP `202 Accepted` response on webhook ingest, offloading LLM classification to async task queues.
+- **Async Webhook Queue (<15ms ACK):** Immediate HTTP `202 Accepted` response on webhook ingest, offloading processing to durable queues.
 - **No Production PAN/CVV Handling:** Operates strictly on tokenized handles under PCI-DSS compliance.
 
 ---
@@ -192,6 +196,11 @@ Backstop encodes 15 machine-executable rules documented in [`docs/POLICY.md`](do
    *Root Cause:* `.env` was never created from `.env.example`. `GEMINI_API_KEY` was empty, so every case silently fell through to `heuristic_plan()`. The architecture diagram said "Google Gemini API" but the planner was running deterministic priority logic the entire time.  
    *Fix:* Created `.env`, wired the real Gemini key, re-ran `make eval` with live API calls. The compliance cage proved its value here: Gemini's choices were independently re-gated by the same policy engine, so the evaluation numbers were structurally sound even under the fallback — but this is now confirmed against live model output.  
    *Lesson:* "The system works" and "the system works the way the diagram says it does" are two different facts. We should have checked both from day one.
+
+5. **Simulated Tool Execution & Premature "Recovered" Marking:**  
+   *Symptom:* Actions were using stub execution (`dummy_tool_exec`) and immediately marking cases as `recovered` at dispatch time with `recovered_paise = amount` before the customer actually paid.  
+   *Root Cause:* The execution layer was disconnected from live APIs and inbound success webhooks were unhandled.  
+   *Fix:* Replaced all stubs with real Razorpay SDK / REST endpoints in `registry.py`, introduced the `action_dispatched` intermediate lifecycle state, deployed a DB-backed persistent queue worker (`queue_worker.py`), and wired inbound `payment.captured` webhooks to verify money receipt and close the recovery loop.
 
 ---
 
