@@ -97,9 +97,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090E] text-[#F3F5F9] flex flex-col font-sans">
+    <div style={{ minHeight: '100vh', background: 'var(--bg-void)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-sans)' }}>
       
-      {/* Header */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -107,66 +106,57 @@ export default function App() {
         onToggleKillSwitch={handleToggleKillSwitch}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 w-full max-w-[1500px] mx-auto px-6 sm:px-8 py-6 space-y-6">
+      <main style={{ flex: 1, width: '100%', maxWidth: 1480, margin: '0 auto', padding: '20px 32px 40px' }}>
         
-        {/* Quick Seeder bar if cases are empty */}
+        {/* Seed notice — shown only when DB is empty */}
         {cases.length === 0 && (
-          <div className="glass-panel p-4 bg-blue-950/20 border-blue-500/30 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Database className="w-5 h-5 text-blue-400" />
+          <div style={{
+            marginBottom: 20, padding: '14px 20px',
+            background: 'rgba(43,120,255,0.06)',
+            border: '1px solid rgba(43,120,255,0.18)',
+            borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Database size={15} color="rgba(43,120,255,0.7)" />
               <div>
-                <h4 className="text-sm font-bold text-white">No active cases in database</h4>
-                <p className="text-xs text-slate-400">Seed sample batch of 100 failed Razorpay payments to view live timelines and metrics.</p>
+                <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.65)' }}>No active cases in database</p>
+                <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.28)', marginTop: 2 }}>Seed 100 synthetic failed Razorpay payments to see live timelines and metrics.</p>
               </div>
             </div>
-            <button
-              onClick={handleSeedDemo}
-              disabled={seeding}
-              className="btn-primary text-xs"
-            >
-              <Download className={`w-3.5 h-3.5 ${seeding ? 'animate-bounce' : ''}`} />
-              {seeding ? 'Loading Cases...' : 'Seed Sample Batch'}
+            <button onClick={handleSeedDemo} disabled={seeding} className="btn-primary">
+              <Download size={12} style={{ animation: seeding ? 'bounce 1s ease infinite' : 'none' }} />
+              {seeding ? 'Loading…' : 'Seed Sample Batch'}
             </button>
           </div>
         )}
 
-        {/* Tab Views */}
         {activeTab === 'cohort' && (
-          <CohortScreen
-            benchmark={benchmark}
-            onRefreshBenchmark={() => fetchBenchmark(true)}
-            loading={loadingBenchmark}
-          />
+          <CohortScreen benchmark={benchmark} onRefreshBenchmark={() => fetchBenchmark(true)} loading={loadingBenchmark} />
         )}
-
         {activeTab === 'timeline' && (
-          <TimelineScreen
-            cases={cases}
-            selectedCaseId={selectedCaseId}
-            onSelectCase={setSelectedCaseId}
-            onProcessCase={handleProcessCase}
-          />
+          <TimelineScreen cases={cases} selectedCaseId={selectedCaseId} onSelectCase={setSelectedCaseId} onProcessCase={handleProcessCase} />
         )}
-
-        {activeTab === 'policy' && (
-          <PolicyScreen />
-        )}
-
+        {activeTab === 'policy' && <PolicyScreen />}
         {activeTab === 'security' && (
-          <SecurityScreen
-            killSwitchEngaged={killSwitchEngaged}
-            onToggleKillSwitch={handleToggleKillSwitch}
-          />
+          <SecurityScreen killSwitchEngaged={killSwitchEngaged} onToggleKillSwitch={handleToggleKillSwitch} />
         )}
 
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[#1A2236] py-3.5 text-center text-[10px] text-[#3A4E68] tracking-widest uppercase" style={{fontFamily: 'IBM Plex Mono, monospace'}}>
+      <footer style={{
+        borderTop: '1px solid rgba(255,255,255,0.04)',
+        padding: '10px 32px',
+        textAlign: 'center',
+        fontFamily: 'IBM Plex Mono, monospace',
+        fontSize: 9, letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.15)',
+      }}>
         Backstop Revenue Recovery &nbsp;·&nbsp; Razorpay AI Buildathon 2026 &nbsp;·&nbsp; Track 03
       </footer>
 
     </div>
   );
 }
+

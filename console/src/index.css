@@ -1,167 +1,286 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────── */
 :root {
-  --bg-main: #05070C;
-  --bg-card: #0C1018;
-  --bg-card-hover: #111620;
-  --bg-elevated: #161D2C;
-  --border-subtle: #1A2236;
-  --border-strong: #263349;
-  --text-primary: #EEF1F8;
-  --text-secondary: #8A9BB5;
-  --text-muted: #5A6B85;
-  --accent-blue: #2F7EF5;
-  --accent-cyan: #00BFD8;
-  --accent-green: #00C48C;
-  --accent-amber: #F0A010;
-  --accent-rose: #F03060;
-  --accent-purple: #7C4DFF;
+  --bg-void:        #030508;
+  --bg-base:        #07090F;
+  --bg-surface:     #0B0E17;
+  --bg-raised:      #0F1320;
+  --bg-overlay:     #141926;
+  --bg-hover:       #181F2E;
+
+  --border-hairline: rgba(255,255,255,0.04);
+  --border-subtle:   rgba(255,255,255,0.07);
+  --border-default:  rgba(255,255,255,0.10);
+  --border-strong:   rgba(255,255,255,0.16);
+
+  --text-primary:   #E8ECF5;
+  --text-secondary: #7D8FA8;
+  --text-muted:     #47566A;
+  --text-faint:     #2A3545;
+
+  /* Brand Accents — cooler, more fintech-precise */
+  --blue:    #2B78FF;
+  --blue-dim: rgba(43,120,255,0.12);
+  --blue-border: rgba(43,120,255,0.22);
+
+  --green:    #00D68F;
+  --green-dim: rgba(0,214,143,0.10);
+  --green-border: rgba(0,214,143,0.20);
+
+  --amber:    #F5A623;
+  --amber-dim: rgba(245,166,35,0.10);
+  --amber-border: rgba(245,166,35,0.20);
+
+  --red:    #F03051;
+  --red-dim: rgba(240,48,81,0.10);
+  --red-border: rgba(240,48,81,0.22);
+
+  --purple:    #8B5FFF;
+  --purple-dim: rgba(139,95,255,0.10);
+  --purple-border: rgba(139,95,255,0.20);
+
   --font-sans: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.25);
+  --shadow-raised: 0 2px 8px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.35);
 }
 
-* {
+/* ─────────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────────── */
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
-  background-color: var(--bg-main);
+html {
+  background: var(--bg-void);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-  width: 100%;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
+
+body { min-height: 100vh; background: var(--bg-void); }
 
 #root {
   min-height: 100vh;
-  width: 100%;
   display: flex;
   flex-direction: column;
 }
 
+/* ─────────────────────────────────────────
+   TYPOGRAPHY SCALE
+───────────────────────────────────────── */
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-main);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+.label-xs {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-/* Glass & Card utility styles */
-.glass-panel {
-  background: rgba(13, 17, 26, 0.85);
-  backdrop-filter: blur(16px);
+/* ─────────────────────────────────────────
+   SCROLLBAR
+───────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* ─────────────────────────────────────────
+   SURFACE SYSTEM
+   Three depths: card → raised → overlay
+───────────────────────────────────────── */
+.surface {
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
-.glass-panel:hover {
-  border-color: var(--border-strong);
+.surface-raised {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
 }
 
-.glow-blue {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.12);
+/* legacy alias */
+.glass-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.15s ease;
 }
+.glass-panel:hover { border-color: var(--border-default); }
 
-.glow-green {
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.12);
-}
+/* ─────────────────────────────────────────
+   ACCENT CHIPS / GLOWS
+───────────────────────────────────────── */
+.glow-blue   { box-shadow: 0 0 0 1px var(--blue-border), 0 0 20px rgba(43,120,255,0.08); }
+.glow-green  { box-shadow: 0 0 0 1px var(--green-border), 0 0 20px rgba(0,214,143,0.08); }
+.glow-amber  { box-shadow: 0 0 0 1px var(--amber-border), 0 0 20px rgba(245,166,35,0.08); }
+.glow-rose   { box-shadow: 0 0 0 1px var(--red-border), 0 0 20px rgba(240,48,81,0.08); }
 
-.glow-amber {
-  box-shadow: 0 0 30px rgba(245, 158, 11, 0.12);
-}
-
-.glow-rose {
-  box-shadow: 0 0 30px rgba(244, 63, 94, 0.12);
-}
-
-/* Struck-through badge for denied actions */
+/* ─────────────────────────────────────────
+   ACTION BADGES
+───────────────────────────────────────── */
 .denied-chip {
   text-decoration: line-through;
-  opacity: 0.75;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #FCA5A5;
+  opacity: 0.6;
+  background: var(--red-dim);
+  border: 1px solid var(--red-border);
+  color: #FF8099;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 10px;
 }
 
 .permitted-chip {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #6EE7B7;
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  color: #00D68F;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 10px;
 }
 
-/* Buttons */
+/* ─────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, #2563EB, #1D4ED8);
-  color: #FFFFFF;
-  border: 1px solid #3B82F6;
-  border-radius: 8px;
-  padding: 8px 16px;
+  background: var(--blue);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  transition: all 0.12s ease;
+  box-shadow: 0 1px 3px rgba(43,120,255,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #3B82F6, #2563EB);
-  box-shadow: 0 0 18px rgba(37, 99, 235, 0.4);
+  background: #3D87FF;
+  box-shadow: 0 2px 12px rgba(43,120,255,0.45), inset 0 1px 0 rgba(255,255,255,0.12);
   transform: translateY(-1px);
 }
-.btn-primary:active {
-  transform: translateY(0);
-}
+.btn-primary:active { transform: translateY(0); box-shadow: none; }
 
 .btn-secondary {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 8px 16px;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
   font-weight: 500;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  transition: all 0.12s ease;
 }
 .btn-secondary:hover {
-  background: var(--bg-card-hover);
+  background: var(--bg-hover);
   border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #DC2626, #991B1B);
-  color: #FFFFFF;
-  border: 1px solid #EF4444;
-  border-radius: 8px;
-  padding: 8px 16px;
+  background: var(--red-dim);
+  color: #F03051;
+  border: 1px solid var(--red-border);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  transition: all 0.12s ease;
 }
 .btn-danger:hover {
-  box-shadow: 0 0 22px rgba(220, 38, 38, 0.5);
-  transform: translateY(-1px);
+  background: rgba(240,48,81,0.18);
+  box-shadow: 0 0 14px rgba(240,48,81,0.25);
+}
+
+/* ─────────────────────────────────────────
+   METRIC NUMBER — big hero display
+───────────────────────────────────────── */
+.metric-hero {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────
+   ANIMATED PULSE RING
+───────────────────────────────────────── */
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(0,214,143,0.35); }
+  70%  { box-shadow: 0 0 0 6px rgba(0,214,143,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,214,143,0); }
+}
+.pulse-ring { animation: pulseRing 2s ease-out infinite; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-up { animation: slideUp 0.25s ease both; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade-in { animation: fadeIn 0.3s ease both; }
+
+/* ─────────────────────────────────────────
+   TABLE OVERRIDES
+───────────────────────────────────────── */
+table { border-collapse: collapse; }
+
+/* ─────────────────────────────────────────
+   DIVIDER LINE
+───────────────────────────────────────── */
+.rule {
+  border: none;
+  border-top: 1px solid var(--border-hairline);
+  margin: 0;
 }
