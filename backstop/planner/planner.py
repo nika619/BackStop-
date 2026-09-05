@@ -129,7 +129,7 @@ def plan(case: Case, event: PaymentEvent, permitted: frozenset[Action]) -> tuple
             err_msg = str(e)
             if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
                 GEMINI_CIRCUIT_BROKEN_UNTIL = time.time() + 60.0
-                logger.warning(f"Gemini quota exhausted (429). Circuit open for 60s, switching to heuristic planner.")
+                logger.warning("Gemini quota exhausted (429). Circuit open for 60s, switching to heuristic planner.")
             else:
                 logger.warning(f"Planner attempt #{attempt + 1} failed: {e}")
             return heuristic_plan(case, permitted)
