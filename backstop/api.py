@@ -1,9 +1,12 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -63,7 +66,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Backstop API — Razorpay AI Buildathon 2026",
     description="Deterministic Policy-Gated AI Revenue Recovery Engine for Failed Razorpay Payments",
-    version="1.0.0",
+    version="2.0.0",
+    contact={
+        "name": "nika619",
+        "url": "https://github.com/nika619/BackStop-",
+        "email": "brahmanmayank00@gmail.com",
+    },
     lifespan=lifespan,
 )
 
@@ -78,15 +86,37 @@ app.add_middleware(
 app.include_router(webhook_router)
 
 
+CONSOLE_DIST_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "console", "dist")
+if os.path.isdir(CONSOLE_DIST_DIR):
+    assets_path = os.path.join(CONSOLE_DIST_DIR, "assets")
+    if os.path.isdir(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="console_assets")
+
+
+@app.get("/ui")
+@app.get("/ui/{path:path}")
+def serve_console_ui(path: str = ""):
+    index_file = os.path.join(CONSOLE_DIST_DIR, "index.html")
+    if os.path.isfile(index_file):
+        return FileResponse(index_file)
+    return {"error": "Console UI not built. Run 'npm run build' in console/."}
+
+
 @app.get("/")
-def root_status():
+def root_status(request: Request):
+    accept = request.headers.get("accept", "")
+    index_file = os.path.join(CONSOLE_DIST_DIR, "index.html")
+    if "text/html" in accept and os.path.isfile(index_file):
+        return FileResponse(index_file)
     return {
         "service": "Backstop Revenue Recovery Engine",
         "track": "03 — AI Revenue Recovery (Razorpay Buildathon 2026)",
+        "author": "nika619 (https://github.com/nika619)",
         "status": "online",
+        "version": "2.0.0",
         "policy_version": POLICY_VERSION,
         "docs_url": "/docs",
-        "console_url": "http://localhost:5173",
+        "console_url": "/ui",
         "endpoints": {
             "health": "/api/health",
             "benchmark": "/api/benchmark",
@@ -104,7 +134,8 @@ def health_check():
     return {
         "status": "healthy",
         "service": "backstop",
-        "version": "1.0.0",
+        "author": "nika619",
+        "version": "2.0.0",
         "policy_version": POLICY_VERSION,
         "kill_switch_active": not GLOBAL_KILL_SWITCH["enabled"],
         "timestamp": datetime.now(timezone.utc).isoformat(),

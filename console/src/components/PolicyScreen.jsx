@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Scale, FileText, CheckCircle2, Info, BookOpen } from 'lucide-react';
+import { API_BASE } from '../config';
 
 export default function PolicyScreen() {
   const [policies, setPolicies] = useState([]);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/policies')
+    fetch(`${API_BASE}/api/policies`)
       .then(r => r.json())
       .then(data => setPolicies(data.rules || []))
       .catch(err => console.error(err));

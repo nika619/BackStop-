@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Any
 
 from backstop.models import Action, Case, PaymentEvent
@@ -85,6 +86,9 @@ def heuristic_plan(case: Case, permitted: frozenset[Action]) -> tuple[Action, di
     return safest(permitted), {"reason": "heuristic default", "delay_hours": 0, "message_tone": "neutral"}
 
 
+GEMINI_CIRCUIT_BROKEN_UNTIL: float = 0.0
+
+
 def plan(case: Case, event: PaymentEvent, permitted: frozenset[Action]) -> tuple[Action, dict[str, Any]]:
     """
     Plan the next recovery action.
@@ -93,6 +97,7 @@ def plan(case: Case, event: PaymentEvent, permitted: frozenset[Action]) -> tuple
     3. Retries once if invalid.
     4. Falls back monotonically to safest(permitted).
     """
+    global GEMINI_CIRCUIT_BROKEN_UNTIL
     if not permitted:
         return Action.NO_ACTION, {"reason": "empty permitted set", "delay_hours": 0, "message_tone": "neutral"}
 
@@ -103,7 +108,7 @@ def plan(case: Case, event: PaymentEvent, permitted: frozenset[Action]) -> tuple
     payload_str = json.dumps(payload, indent=2)
 
     gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
+    if not gemini_key or time.time() < GEMINI_CIRCUIT_BROKEN_UNTIL:
         return heuristic_plan(case, permitted)
 
     for attempt in range(2):
@@ -121,7 +126,12 @@ def plan(case: Case, event: PaymentEvent, permitted: frozenset[Action]) -> tuple
             return action, data
 
         except Exception as e:
-            logger.warning(f"Planner attempt #{attempt + 1} failed: {e}")
+            err_msg = str(e)
+            if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                GEMINI_CIRCUIT_BROKEN_UNTIL = time.time() + 60.0
+                logger.warning(f"Gemini quota exhausted (429). Circuit open for 60s, switching to heuristic planner.")
+            else:
+                logger.warning(f"Planner attempt #{attempt + 1} failed: {e}")
             return heuristic_plan(case, permitted)
 
     safe_choice = safest(permitted)

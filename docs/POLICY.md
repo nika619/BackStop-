@@ -1,6 +1,7 @@
 # Backstop — Compliance Policy Specification (Rules R01..R14)
 
 **Policy Engine Version:** `2026.09.01`  
+**Lead Author & Maintainer:** [nika619](https://github.com/nika619)  
 **Timezone Baseline:** Indian Standard Time (`UTC+05:30`)
 
 ---

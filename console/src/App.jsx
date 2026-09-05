@@ -5,6 +5,7 @@ import TimelineScreen from './components/TimelineScreen';
 import PolicyScreen from './components/PolicyScreen';
 import SecurityScreen from './components/SecurityScreen';
 import { Database, Download } from 'lucide-react';
+import { API_BASE } from './config';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('cohort');
@@ -17,7 +18,7 @@ export default function App() {
 
   const fetchBenchmark = (recompute = false) => {
     setLoadingBenchmark(true);
-    fetch(`http://127.0.0.1:8000/api/benchmark?recompute=${recompute}`)
+    fetch(`${API_BASE}/api/benchmark?recompute=${recompute}`)
       .then(r => r.json())
       .then(data => {
         setBenchmark(data);
@@ -30,7 +31,7 @@ export default function App() {
   };
 
   const fetchCases = () => {
-    fetch('http://127.0.0.1:8000/api/cases?limit=100')
+    fetch(`${API_BASE}/api/cases?limit=100`)
       .then(r => r.json())
       .then(data => {
         setCases(data.cases || []);
@@ -39,7 +40,7 @@ export default function App() {
   };
 
   const fetchKillSwitch = () => {
-    fetch('http://127.0.0.1:8000/api/kill-switch')
+    fetch(`${API_BASE}/api/kill-switch`)
       .then(r => r.json())
       .then(data => {
         setKillSwitchEngaged(data.kill_switch_engaged);
@@ -55,7 +56,7 @@ export default function App() {
 
   const handleToggleKillSwitch = () => {
     const nextState = !killSwitchEngaged;
-    fetch('http://127.0.0.1:8000/api/kill-switch', {
+    fetch(`${API_BASE}/api/kill-switch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -73,7 +74,7 @@ export default function App() {
 
   const handleSeedDemo = () => {
     setSeeding(true);
-    fetch('http://127.0.0.1:8000/api/demo/seed?count=100', { method: 'POST' })
+    fetch(`${API_BASE}/api/demo/seed?count=100`, { method: 'POST' })
       .then(r => r.json())
       .then(data => {
         setSeeding(false);
@@ -87,7 +88,7 @@ export default function App() {
   };
 
   const handleProcessCase = (caseId) => {
-    fetch(`http://127.0.0.1:8000/api/cases/${caseId}/process`, { method: 'POST' })
+    fetch(`${API_BASE}/api/cases/${caseId}/process`, { method: 'POST' })
       .then(r => r.json())
       .then(data => {
         fetchCases();
@@ -151,9 +152,9 @@ export default function App() {
         fontFamily: 'IBM Plex Mono, monospace',
         fontSize: 9, letterSpacing: '0.12em',
         textTransform: 'uppercase',
-        color: 'rgba(255,255,255,0.15)',
+        color: 'rgba(255,255,255,0.22)',
       }}>
-        Backstop Revenue Recovery &nbsp;·&nbsp; Razorpay AI Buildathon 2026 &nbsp;·&nbsp; Track 03
+        Backstop Revenue Recovery &nbsp;·&nbsp; Architected by <a href="https://github.com/nika619" target="_blank" rel="noreferrer" style={{ color: 'rgba(255,255,255,0.38)', textDecoration: 'none' }}>nika619</a> &nbsp;·&nbsp; Razorpay AI Buildathon 2026 &nbsp;·&nbsp; Track 03
       </footer>
 
     </div>

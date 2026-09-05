@@ -1,5 +1,7 @@
 # Backstop — STRIDE-Lite Threat Model & Security Controls
 
+**Security Author & Lead Architect:** [nika619](https://github.com/nika619)  
+
 ## 1. Threat Matrix
 
 | Threat Category | Attack Vector | Potential Impact | Backstop Defense Control |

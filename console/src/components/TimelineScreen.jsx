@@ -3,6 +3,7 @@ import {
   ShieldCheck, ShieldAlert, Cpu, ArrowRight, CheckCircle2, XCircle, 
   Clock, Hash, FileCode, Play, AlertCircle, Sparkles, Filter, ChevronRight
 } from 'lucide-react';
+import { API_BASE } from '../config';
 
 export default function TimelineScreen({ cases, selectedCaseId, onSelectCase, onProcessCase }) {
   const [timelineData, setTimelineData] = useState(null);
@@ -25,7 +26,7 @@ export default function TimelineScreen({ cases, selectedCaseId, onSelectCase, on
   useEffect(() => {
     if (!selectedCaseId) return;
     setLoadingTimeline(true);
-    fetch(`http://127.0.0.1:8000/api/cases/${selectedCaseId}/timeline`)
+    fetch(`${API_BASE}/api/cases/${selectedCaseId}/timeline`)
       .then(r => r.json())
       .then(data => {
         setTimelineData(data);

@@ -3,6 +3,7 @@ import {
   ShieldAlert, Lock, Power, RefreshCw, AlertTriangle, CheckCircle2, 
   Send, Database, Activity
 } from 'lucide-react';
+import { API_BASE } from '../config';
 
 const S = {
   page: { display: 'flex', flexDirection: 'column', gap: 20 },
@@ -79,7 +80,7 @@ export default function SecurityScreen({ killSwitchEngaged, onToggleKillSwitch }
 
   const fetchLedgerStatus = () => {
     setLoadingLedger(true);
-    fetch('http://127.0.0.1:8000/api/ledger/verify')
+    fetch(`${API_BASE}/api/ledger/verify`)
       .then(r => r.json())
       .then(data => { setLedgerStatus(data); setLoadingLedger(false); })
       .catch(err => { console.error(err); setLoadingLedger(false); });
@@ -88,7 +89,7 @@ export default function SecurityScreen({ killSwitchEngaged, onToggleKillSwitch }
   useEffect(() => { fetchLedgerStatus(); }, []);
 
   const handleSimulateTamper = () => {
-    fetch('http://127.0.0.1:8000/api/ledger/tamper', {
+    fetch(`${API_BASE}/api/ledger/tamper`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ seq: 2, fake_amount_paise: 99999900 }),
     })
@@ -101,7 +102,7 @@ export default function SecurityScreen({ killSwitchEngaged, onToggleKillSwitch }
     e.preventDefault();
     if (!injectionInput) return;
     setTestingInjection(true);
-    fetch('http://127.0.0.1:8000/api/planner/test-injection', {
+    fetch(`${API_BASE}/api/planner/test-injection`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ payload: injectionInput, permitted_actions: ['no_action', 'schedule_followup'] }),
     })

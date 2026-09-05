@@ -166,13 +166,16 @@ def execute(
 
     # Additional execution safeguards: Order cancellation for rail switch
     extra_details = {}
-    if action == Action.SWITCH_RAIL_LINK and event.order_id:
+    if not ctx.dry_run and action == Action.SWITCH_RAIL_LINK and event.order_id:
         cancel_res = razorpay_client.cancel_order(event.order_id, idempotency_key=idempotency_key)
         extra_details["cancelled_original_order"] = cancel_res
 
     # Record execution in ledger
-    exec_result = tool.fn(case, event, params)
-    exec_result.update(extra_details)
+    if ctx.dry_run:
+        exec_result = {"status": "dry_run", "action": action.value, "simulated": True}
+    else:
+        exec_result = tool.fn(case, event, params)
+        exec_result.update(extra_details)
     status_str = "simulated" if ctx.dry_run else "executed"
 
     # If schedule_followup signals it, persist the QueueJob in the executor's existing session

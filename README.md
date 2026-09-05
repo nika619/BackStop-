@@ -1,7 +1,7 @@
 # Backstop ⚡
 
 > **Deterministic Policy-Gated AI Revenue Recovery Engine for Razorpay Failed Payments**  
-> *Track 03 — AI Revenue Recovery • Razorpay AI Buildathon 2026*
+> *Author & Lead Architect:* **[nika619](https://github.com/nika619)** • *Track 03 — AI Revenue Recovery • Razorpay AI Buildathon 2026*
 
 ---
 
@@ -213,6 +213,16 @@ Backstop encodes 15 machine-executable rules documented in [`docs/POLICY.md`](do
 
 ---
 
-## 11. License
+## 11. Author & Team Credibility
 
-MIT License • Developed for Razorpay AI Buildathon 2026.
+- **Sole Architect & Developer:** [nika619](https://github.com/nika619)
+- **GitHub Profile:** [@nika619](https://github.com/nika619)
+- **Repository:** [nika619/BackStop-](https://github.com/nika619/BackStop-)
+- **Submission:** Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery
+- **Architecture Philosophy:** Deterministic policy-gated pipelines, stateful two-phase recovery lifecycle, RBI E-mandate compliance cages, and cryptographic audit chains.
+
+---
+
+## 12. License
+
+MIT License • Copyright (c) 2026 [nika619](https://github.com/nika619). Developed for Razorpay AI Buildathon 2026.
