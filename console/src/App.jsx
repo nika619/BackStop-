@@ -4,7 +4,7 @@ import CohortScreen from './components/CohortScreen';
 import TimelineScreen from './components/TimelineScreen';
 import PolicyScreen from './components/PolicyScreen';
 import SecurityScreen from './components/SecurityScreen';
-import { RefreshCw, Database, Sparkles } from 'lucide-react';
+import { Database, Download } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('cohort');
@@ -125,8 +125,8 @@ export default function App() {
               disabled={seeding}
               className="btn-primary text-xs"
             >
-              <Sparkles className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
-              {seeding ? 'Seeding Database...' : 'Seed Sample Batch'}
+              <Download className={`w-3.5 h-3.5 ${seeding ? 'animate-bounce' : ''}`} />
+              {seeding ? 'Loading Cases...' : 'Seed Sample Batch'}
             </button>
           </div>
         )}
@@ -163,8 +163,8 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#1F2839] py-4 text-center text-xs text-slate-500 font-mono">
-        BACKSTOP REVENUE RECOVERY • RAZORPAY AI BUILDATHON 2026 • TRACK 03
+      <footer className="border-t border-[#1A2236] py-3.5 text-center text-[10px] text-[#3A4E68] tracking-widest uppercase" style={{fontFamily: 'IBM Plex Mono, monospace'}}>
+        Backstop Revenue Recovery &nbsp;·&nbsp; Razorpay AI Buildathon 2026 &nbsp;·&nbsp; Track 03
       </footer>
 
     </div>

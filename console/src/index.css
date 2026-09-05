@@ -1,24 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 :root {
-  --bg-main: #06080D;
-  --bg-card: #0D111A;
-  --bg-card-hover: #131926;
-  --bg-elevated: #182030;
-  --border-subtle: #1E2738;
-  --border-strong: #2D3A52;
-  --text-primary: #F3F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --accent-blue: #3B82F6;
-  --accent-cyan: #06B6D4;
-  --accent-green: #10B981;
-  --accent-amber: #F59E0B;
-  --accent-rose: #F43F5E;
-  --accent-purple: #8B5CF6;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --bg-main: #05070C;
+  --bg-card: #0C1018;
+  --bg-card-hover: #111620;
+  --bg-elevated: #161D2C;
+  --border-subtle: #1A2236;
+  --border-strong: #263349;
+  --text-primary: #EEF1F8;
+  --text-secondary: #8A9BB5;
+  --text-muted: #5A6B85;
+  --accent-blue: #2F7EF5;
+  --accent-cyan: #00BFD8;
+  --accent-green: #00C48C;
+  --accent-amber: #F0A010;
+  --accent-rose: #F03060;
+  --accent-purple: #7C4DFF;
+  --font-sans: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
 * {
