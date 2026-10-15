@@ -657,3 +657,8 @@ BackStop-/
 - **Repository:** [https://github.com/nika619/BackStop-](https://github.com/nika619/BackStop-)
 - **Hackathon Track:** Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery
 - **License:** MIT License. See [LICENSE](LICENSE) for full details.
+
+
+---
+
+Built by [Mayank Tiwari](https://github.com/nika619) · [Hire me on Contra](https://contra.com/mayank_tiwari_a4vkcjsh)
